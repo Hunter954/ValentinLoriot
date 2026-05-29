@@ -1,1 +1,32 @@
-{% extends "base.html" %}{% from "_macros.html" import media_url, icon %}{% block content %}<main><section class="about-hero"><img src="{{ url_for('static', filename='img/demo_chateau_wide.jpg') }}" alt=""><span class="play"></span><div class="about-badge"><strong>{{ S.get('brand_name') }}</strong><small>{{ S.get('brand_subtitle') }}</small></div></section><section class="container about-content"><div class="stats"><div><strong>{{ S.get('years_experience','5') }}</strong><span>ans d’expérience</span></div><div><strong>{{ S.get('base_countries','2') }}</strong><span>pays de base</span></div><div><strong>{{ S.get('client_count','20+') }}</strong><span>clients</span></div></div><p class="bio">{{ S.get('about_text') }}</p><h2 class="section-title">RETROUVEZ-MOI</h2><div class="social-row retrouvez">{% for s in social_links %}<a href="{{ s.url }}" target="_blank" aria-label="{{s.name}}" title="{{s.name}}" class="social-icon">{{ icon(s.icon)|safe }}</a>{% endfor %}</div></section></main>{% endblock %}
+{% extends "base.html" %}
+{% from "_macros.html" import media_url, icon %}
+{% block content %}
+{% set about_media = S.get('about_hero_media') %}
+{% set about_media_ext = about_media.lower().rsplit('.', 1)[-1] if about_media else '' %}
+<main>
+  <section class="about-hero">
+    {% if about_media and about_media_ext in ['mp4','mov','webm','m4v'] %}
+      <video autoplay muted loop playsinline preload="metadata">
+        <source src="{{ url_for('public.media', filename=about_media) }}">
+      </video>
+    {% elif about_media %}
+      <img src="{{ url_for('public.media', filename=about_media) }}" alt="">
+      <span class="play"></span>
+    {% else %}
+      <img src="{{ url_for('static', filename='img/demo_chateau_wide.jpg') }}" alt="">
+      <span class="play"></span>
+    {% endif %}
+    <div class="about-badge"><strong>{{ S.get('brand_name') }}</strong><small>{{ S.get('brand_subtitle') }}</small></div>
+  </section>
+  <section class="container about-content">
+    <div class="stats">
+      <div><strong>{{ S.get('years_experience','5') }}</strong><span>ans d’expérience</span></div>
+      <div><strong>{{ S.get('base_countries','2') }}</strong><span>pays de base</span></div>
+      <div><strong>{{ S.get('client_count','20+') }}</strong><span>clients</span></div>
+    </div>
+    <p class="bio">{{ S.get('about_text') }}</p>
+    <h2 class="section-title">RETROUVEZ-MOI</h2>
+    <div class="social-row retrouvez">{% for s in social_links %}<a href="{{ s.url }}" target="_blank" aria-label="{{s.name}}" title="{{s.name}}" class="social-icon">{{ icon(s.icon)|safe }}</a>{% endfor %}</div>
+  </section>
+</main>
+{% endblock %}

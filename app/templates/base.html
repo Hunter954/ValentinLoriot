@@ -1,1 +1,43 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ S.get('brand_name','Valentin Loriot') }}</title>{% if S.get('site_favicon') %}<link rel="icon" type="image/png" href="{{ url_for('public.media', filename=S.get('site_favicon')) }}">{% endif %}<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"><link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}"></head><body>{% from "_macros.html" import icon, brand_logo with context %}<header class="topbar"><a class="logo" href="{{ url_for('public.home') }}">{{ brand_logo() }}</a><nav><a class="{{ 'active' if active=='home' }}" href="{{ url_for('public.home') }}">Home</a><a class="{{ 'active' if active=='portfolio' }}" href="{{ url_for('public.portfolio') }}">Portfolio</a><a class="{{ 'active' if active=='about' }}" href="{{ url_for('public.about') }}">About</a><a class="{{ 'active' if active=='contact' }}" href="{{ url_for('public.contact') }}">Contact</a></nav></header>{% block content %}{% endblock %}<footer class="footer container"><div><h4>ABOUT</h4><p>{{ S.get('footer_about','A visual storytelling studio\ndedicated to capturing emotion.')|replace('\n','<br>')|safe }}</p></div><div class="footer-center"><a class="logo footer-logo" href="{{ url_for('public.home') }}">{{ brand_logo('footer-brand') }}</a><div class="social-row small">{% for s in social_links %}<a href="{{ s.url }}" target="_blank" aria-label="{{s.name}}" title="{{s.name}}" class="social-icon">{{ icon(s.icon)|safe }}</a>{% endfor %}</div></div><div><h4>CONTACTS</h4><p>Phone: {{ S.get('phone') }}<br>Email: {{ S.get('email') }}</p></div></footer><script src="{{ url_for('static', filename='js/site.js') }}"></script></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ S.get('brand_name','Valentin Loriot') }}</title>
+  {% if S.get('site_favicon') %}<link rel="icon" type="image/png" href="{{ url_for('public.media', filename=S.get('site_favicon')) }}">{% endif %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+{% from "_macros.html" import icon, brand_logo with context %}
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="{{ url_for('public.home') }}">{{ brand_logo() }}</a>
+    <nav>
+      <a class="{{ 'active' if active=='home' }}" href="{{ url_for('public.home') }}">Home</a>
+      <a class="{{ 'active' if active=='portfolio' }}" href="{{ url_for('public.portfolio') }}">Portfolio</a>
+      <a class="{{ 'active' if active=='about' }}" href="{{ url_for('public.about') }}">About</a>
+      <a class="{{ 'active' if active=='contact' }}" href="{{ url_for('public.contact') }}">Contact</a>
+    </nav>
+  </div>
+</header>
+{% block content %}{% endblock %}
+<footer class="footer container">
+  <div>
+    <h4>ABOUT</h4>
+    <p>{{ S.get('footer_about','A visual storytelling studio\ndedicated to capturing emotion.')|replace('\n','<br>')|safe }}</p>
+  </div>
+  <div class="footer-center">
+    <a class="logo footer-logo" href="{{ url_for('public.home') }}">{{ brand_logo('footer-brand') }}</a>
+    <div class="social-row small">
+      {% for s in social_links %}<a href="{{ s.url }}" target="_blank" aria-label="{{s.name}}" title="{{s.name}}" class="social-icon">{{ icon(s.icon)|safe }}</a>{% endfor %}
+    </div>
+  </div>
+  <div>
+    <h4>CONTACTS</h4>
+    <p>Phone: {{ S.get('phone') }}<br>Email: {{ S.get('email') }}</p>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

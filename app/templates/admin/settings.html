@@ -18,6 +18,19 @@
   </section>
   <section class="tab-content" data-content="home">
     <div class="form-grid">
+      <div class="wide settings-upload">
+        <label>Vídeo ou foto principal da Home / botão de play
+          <input type="file" name="home_hero_media" accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v">
+        </label>
+        {% if settings.get('home_hero_media') %}
+          {% set home_ext = settings.get('home_hero_media').lower().rsplit('.', 1)[-1] %}
+          {% if home_ext in ['mp4','mov','webm','m4v'] %}
+            <video class="preview-media" src="{{ url_for('public.media', filename=settings.get('home_hero_media')) }}" muted autoplay loop playsinline></video>
+          {% else %}
+            <img class="preview-media" src="{{ url_for('public.media', filename=settings.get('home_hero_media')) }}" alt="Mídia atual da home">
+          {% endif %}
+        {% endif %}
+      </div>
       <label class="wide">Kicker / linha superior<input name="home_kicker" value="{{ settings.get('home_kicker','') }}"></label>
       <label>Título principal<input name="home_title" value="{{ settings.get('home_title','') }}"></label>
       <label class="wide">Subtítulo da home<textarea name="home_subtitle" rows="4">{{ settings.get('home_subtitle','') }}</textarea></label>
@@ -25,6 +38,19 @@
   </section>
   <section class="tab-content" data-content="about">
     <div class="form-grid">
+      <div class="wide settings-upload">
+        <label>Vídeo ou foto do topo da página About
+          <input type="file" name="about_hero_media" accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v">
+        </label>
+        {% if settings.get('about_hero_media') %}
+          {% set about_ext = settings.get('about_hero_media').lower().rsplit('.', 1)[-1] %}
+          {% if about_ext in ['mp4','mov','webm','m4v'] %}
+            <video class="preview-media" src="{{ url_for('public.media', filename=settings.get('about_hero_media')) }}" muted autoplay loop playsinline></video>
+          {% else %}
+            <img class="preview-media" src="{{ url_for('public.media', filename=settings.get('about_hero_media')) }}" alt="Mídia atual do about">
+          {% endif %}
+        {% endif %}
+      </div>
       <label class="wide">Texto do About<textarea name="about_text" rows="7">{{ settings.get('about_text','') }}</textarea></label>
       <label>Anos de experiência<input name="years_experience" value="{{ settings.get('years_experience','') }}"></label>
       <label>Países/base<input name="base_countries" value="{{ settings.get('base_countries','') }}"></label>

@@ -32,7 +32,12 @@ def dashboard():
 @login_required
 def settings():
     fields = ["brand_name","brand_subtitle","home_kicker","home_title","home_subtitle","about_text","years_experience","base_countries","client_count","footer_about","phone","email"]
-    upload_fields = {"site_logo": "branding", "site_favicon": "branding"}
+    upload_fields = {
+        "site_logo": "branding",
+        "site_favicon": "branding",
+        "home_hero_media": "site-media",
+        "about_hero_media": "site-media",
+    }
     if request.method == "POST":
         for key in fields:
             row = SiteSetting.query.filter_by(key=key).first() or SiteSetting(key=key)

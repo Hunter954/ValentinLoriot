@@ -1,1 +1,42 @@
-{% extends "base.html" %}{% from "_macros.html" import project_card, media_url %}{% block content %}<main class="home"><section class="hero container"><p class="kicker">{{ S.get('home_kicker') }}</p><h1>{{ S.get('home_title') }}</h1><h2>{{ S.get('home_subtitle')|replace('\n','<br>')|safe }}</h2><a class="hero-video" href="{{ url_for('public.project_detail', slug=hero.slug) if hero else '#' }}"><img src="{{ media_url(hero.hero_path if hero else None) }}" alt="hero"><span class="play"></span></a><div class="hero-actions"><a class="btn" href="{{ url_for('public.portfolio') }}"><i class="bi bi-camera-reels"></i> Voir mes réalisations</a><a class="btn ghost" href="{{ url_for('public.contact') }}"><i class="bi bi-send"></i> Demander un devis</a></div></section><section class="container"><h2 class="section-title">DERNIERS PROJETS</h2><div class="grid three">{% for p in projects %}{{ project_card(p) }}{% endfor %}</div></section><section class="container trust"><h2 class="section-title">ILS M’ONT FAIT CONFIANCE</h2><div class="client-logos">{% for c in clients %}<div class="client-logo">{% if c.logo_path %}<img src="{{ url_for('public.media', filename=c.logo_path) }}" alt="{{c.name}}">{% else %}<span>{{c.name}}</span>{% endif %}</div>{% endfor %}</div></section></main>{% endblock %}
+{% extends "base.html" %}
+{% from "_macros.html" import project_card, media_url %}
+{% block content %}
+{% set home_media = S.get('home_hero_media') %}
+{% set home_media_ext = home_media.lower().rsplit('.', 1)[-1] if home_media else '' %}
+<main class="home">
+  <section class="hero container">
+    <p class="kicker">{{ S.get('home_kicker') }}</p>
+    <h1>{{ S.get('home_title') }}</h1>
+    <h2>{{ S.get('home_subtitle')|replace('\n','<br>')|safe }}</h2>
+    <a class="hero-video" href="{{ url_for('public.project_detail', slug=hero.slug) if hero else url_for('public.portfolio') }}" aria-label="Voir le film principal">
+      {% if home_media and home_media_ext in ['mp4','mov','webm','m4v'] %}
+        <video autoplay muted loop playsinline preload="metadata" poster="{{ media_url(hero.hero_path if hero else None) }}">
+          <source src="{{ url_for('public.media', filename=home_media) }}">
+        </video>
+      {% elif home_media %}
+        <img src="{{ url_for('public.media', filename=home_media) }}" alt="hero">
+        <span class="play"></span>
+      {% else %}
+        <img src="{{ media_url(hero.hero_path if hero else None) }}" alt="hero">
+        <span class="play"></span>
+      {% endif %}
+    </a>
+    <div class="hero-actions">
+      <a class="btn" href="{{ url_for('public.portfolio') }}"><i class="bi bi-camera-reels"></i> Voir mes réalisations</a>
+      <a class="btn ghost" href="{{ url_for('public.contact') }}"><i class="bi bi-send"></i> Demander un devis</a>
+    </div>
+  </section>
+  <section class="container">
+    <h2 class="section-title">DERNIERS PROJETS</h2>
+    <div class="grid three">{% for p in projects %}{{ project_card(p) }}{% endfor %}</div>
+  </section>
+  <section class="container trust">
+    <h2 class="section-title">ILS M’ONT FAIT CONFIANCE</h2>
+    <div class="client-logos">
+      {% for c in clients %}
+        <div class="client-logo">{% if c.logo_path %}<img src="{{ url_for('public.media', filename=c.logo_path) }}" alt="{{c.name}}">{% else %}<span>{{c.name}}</span>{% endif %}</div>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

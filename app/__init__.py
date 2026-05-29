@@ -93,6 +93,8 @@ def ensure_defaults(app):
         "home_kicker": "CINEMATIC FILMMAKER • FRANCE & BRAZIL",
         "home_title": "Valentin Loriot",
         "home_subtitle": "Je transforme vos projets\nen récits visuels",
+        "home_hero_media": "",
+        "about_hero_media": "",
         "about_text": "Français installé au Brésil, je travaille à l’intersection du documentaire et de la direction artistique. Mon œil cinématique s’est formé entre les vignes du Var, les hôtels de luxe et les rues de São Paulo. Je tourne en France, au Brésil, et partout où une histoire mérite d’être racontée.",
         "years_experience": "5",
         "base_countries": "2",
