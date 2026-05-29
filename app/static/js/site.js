@@ -1,0 +1,1 @@
+document.querySelectorAll('.filter').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter').forEach(b=>b.classList.remove('on'));btn.classList.add('on');const f=btn.dataset.filter;document.querySelectorAll('.portfolio-grid .project-card').forEach(card=>{card.style.display=(f==='Tous'||card.dataset.category===f)?'block':'none';});});});
