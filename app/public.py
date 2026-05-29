@@ -10,7 +10,7 @@ def media(filename):
 @public_bp.route("/")
 def home():
     projects = Project.query.filter_by(is_featured=True).order_by(Project.sort_order, Project.created_at.desc()).limit(3).all()
-    clients = Client.query.filter_by(is_featured=True).order_by(Client.sort_order, Client.name).all()
+    clients = Client.query.filter_by(is_featured=True, is_active=True).order_by(Client.sort_order, Client.name).all()
     hero = Project.query.filter_by(is_featured=True).order_by(Project.sort_order, Project.created_at.desc()).first()
     return render_template("home.html", projects=projects, clients=clients, hero=hero, active="home")
 

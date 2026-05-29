@@ -1,1 +1,50 @@
-{% extends "admin/base_admin.html" %}{% block content %}<header class="admin-head"><div><p>Conteúdo</p><h1>Textos, logo e favicon do site</h1></div></header><form method="post" enctype="multipart/form-data" class="panel form-grid"><div class="wide settings-upload"><label>Logomarca do site em PNG<input type="file" name="site_logo" accept="image/png,image/webp,image/svg+xml,image/jpeg"></label>{% if settings.get('site_logo') %}<img class="preview-logo" src="{{ url_for('public.media', filename=settings.get('site_logo')) }}" alt="Logo atual">{% endif %}</div><div class="wide settings-upload"><label>Favicon em PNG<input type="file" name="site_favicon" accept="image/png,image/x-icon,image/svg+xml,image/jpeg"></label>{% if settings.get('site_favicon') %}<img class="preview-favicon" src="{{ url_for('public.media', filename=settings.get('site_favicon')) }}" alt="Favicon atual">{% endif %}</div>{% for f in fields %}<label class="{{ 'wide' if f in ['about_text','footer_about','home_subtitle'] }}">{{f}}{% if f in ['about_text','footer_about','home_subtitle'] %}<textarea name="{{f}}" rows="4">{{ settings.get(f,'') }}</textarea>{% else %}<input name="{{f}}" value="{{ settings.get(f,'') }}">{% endif %}</label>{% endfor %}<button class="primary wide"><i class="bi bi-save"></i> Salvar configurações</button></form>{% endblock %}
+{% extends "admin/base_admin.html" %}{% block content %}
+<header class="admin-head"><div><p>Conteúdo</p><h1>Textos, logo e favicon do site</h1></div></header>
+<form method="post" enctype="multipart/form-data" class="panel settings-panel">
+  <div class="settings-tabs" role="tablist">
+    <button type="button" class="tab-btn active" data-tab="brand"><i class="bi bi-gem"></i> Branding</button>
+    <button type="button" class="tab-btn" data-tab="home"><i class="bi bi-house"></i> Home</button>
+    <button type="button" class="tab-btn" data-tab="about"><i class="bi bi-person-video3"></i> About</button>
+    <button type="button" class="tab-btn" data-tab="contact"><i class="bi bi-envelope"></i> Contact</button>
+    <button type="button" class="tab-btn" data-tab="footer"><i class="bi bi-layout-text-window-reverse"></i> Footer</button>
+  </div>
+  <section class="tab-content active" data-content="brand">
+    <div class="form-grid">
+      <div class="wide settings-upload"><label>Logomarca do site em PNG<input type="file" name="site_logo" accept="image/png,image/webp,image/svg+xml,image/jpeg"></label>{% if settings.get('site_logo') %}<img class="preview-logo" src="{{ url_for('public.media', filename=settings.get('site_logo')) }}" alt="Logo atual">{% endif %}</div>
+      <div class="wide settings-upload"><label>Favicon em PNG<input type="file" name="site_favicon" accept="image/png,image/x-icon,image/svg+xml,image/jpeg"></label>{% if settings.get('site_favicon') %}<img class="preview-favicon" src="{{ url_for('public.media', filename=settings.get('site_favicon')) }}" alt="Favicon atual">{% endif %}</div>
+      <label>Nome da marca<input name="brand_name" value="{{ settings.get('brand_name','') }}"></label>
+      <label>Subtítulo da marca<input name="brand_subtitle" value="{{ settings.get('brand_subtitle','') }}"></label>
+    </div>
+  </section>
+  <section class="tab-content" data-content="home">
+    <div class="form-grid">
+      <label class="wide">Kicker / linha superior<input name="home_kicker" value="{{ settings.get('home_kicker','') }}"></label>
+      <label>Título principal<input name="home_title" value="{{ settings.get('home_title','') }}"></label>
+      <label class="wide">Subtítulo da home<textarea name="home_subtitle" rows="4">{{ settings.get('home_subtitle','') }}</textarea></label>
+    </div>
+  </section>
+  <section class="tab-content" data-content="about">
+    <div class="form-grid">
+      <label class="wide">Texto do About<textarea name="about_text" rows="7">{{ settings.get('about_text','') }}</textarea></label>
+      <label>Anos de experiência<input name="years_experience" value="{{ settings.get('years_experience','') }}"></label>
+      <label>Países/base<input name="base_countries" value="{{ settings.get('base_countries','') }}"></label>
+      <label>Clientes atendidos<input name="client_count" value="{{ settings.get('client_count','') }}"></label>
+    </div>
+  </section>
+  <section class="tab-content" data-content="contact">
+    <div class="form-grid">
+      <label>Telefone<input name="phone" value="{{ settings.get('phone','') }}"></label>
+      <label>E-mail<input name="email" value="{{ settings.get('email','') }}"></label>
+    </div>
+  </section>
+  <section class="tab-content" data-content="footer">
+    <div class="form-grid">
+      <label class="wide">Texto do rodapé<textarea name="footer_about" rows="5">{{ settings.get('footer_about','') }}</textarea></label>
+    </div>
+  </section>
+  <button class="primary wide save-settings"><i class="bi bi-save"></i> Salvar configurações</button>
+</form>
+<script>
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));btn.classList.add('active');document.querySelector(`[data-content="${btn.dataset.tab}"]`)?.classList.add('active')}));
+</script>
+{% endblock %}

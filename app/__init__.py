@@ -55,10 +55,35 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        ensure_schema_upgrades()
         ensure_defaults(app)
 
     return app
 
+
+
+def ensure_schema_upgrades():
+    """Pequenas atualizações automáticas para bancos já existentes no Railway.
+    db.create_all() cria tabelas novas, mas não adiciona colunas em tabelas antigas.
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    dialect = db.engine.dialect.name
+    upgrades = {
+        "client": [("is_active", "BOOLEAN DEFAULT TRUE NOT NULL", "BOOLEAN DEFAULT 1 NOT NULL")],
+        "social_link": [("is_active", "BOOLEAN DEFAULT TRUE NOT NULL", "BOOLEAN DEFAULT 1 NOT NULL")],
+        "user": [("is_active", "BOOLEAN DEFAULT TRUE NOT NULL", "BOOLEAN DEFAULT 1 NOT NULL")],
+    }
+    with db.engine.begin() as conn:
+        for table, columns in upgrades.items():
+            existing = {c["name"] for c in inspector.get_columns(table)}
+            for column, pg_def, sqlite_def in columns:
+                if column in existing:
+                    continue
+                table_name = f'"{table}"' if table == "user" else table
+                col_def = sqlite_def if dialect == "sqlite" else pg_def
+                conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column} {col_def}"))
 
 def ensure_defaults(app):
     from .models import User, SiteSetting, SocialLink

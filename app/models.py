@@ -8,6 +8,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(180), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
 class SiteSetting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,8 +22,9 @@ class Client(db.Model):
     website = db.Column(db.String(255))
     sort_order = db.Column(db.Integer, default=0)
     is_featured = db.Column(db.Boolean, default=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    projects = db.relationship("Project", back_populates="client", cascade="all, delete-orphan")
+    projects = db.relationship("Project", back_populates="client")
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -63,3 +65,4 @@ class SocialLink(db.Model):
     url = db.Column(db.String(500), nullable=False)
     icon = db.Column(db.String(40), default="instagram")
     sort_order = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)

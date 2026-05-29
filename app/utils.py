@@ -35,4 +35,4 @@ def settings_dict():
 
 
 def social_links():
-    return SocialLink.query.order_by(SocialLink.sort_order, SocialLink.id).all()
+    return SocialLink.query.filter_by(is_active=True).order_by(SocialLink.sort_order, SocialLink.id).all()
