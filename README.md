@@ -54,7 +54,7 @@ ADMIN_EMAIL=seuemail@dominio.com
 ADMIN_PASSWORD=senha-forte-aqui
 ```
 
-5. Deploy. O `Procfile` já inicia com Gunicorn.
+5. Deploy. O `railway.json` e o `Procfile` já iniciam com Gunicorn usando `run:app`.
 
 ## Como usar o painel
 
@@ -64,6 +64,10 @@ ADMIN_PASSWORD=senha-forte-aqui
 4. Edite o projeto e adicione fotos/vídeos na galeria.
 5. Em **Redes sociais**, cadastre Instagram, YouTube e LinkedIn. Eles aparecem no About e no rodapé.
 6. Em **Textos do site**, ajuste telefone, e-mail, biografia, números de experiência e subtítulos.
+
+## Correção importante para Railway
+
+Este pacote inclui `run.py` porque alguns deploys do Railway/Gunicorn procuram automaticamente por `run:app`. Sem esse arquivo, o container pode cair com `ModuleNotFoundError: No module named 'run'`.
 
 ## Observações importantes
 
