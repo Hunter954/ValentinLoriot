@@ -32,16 +32,23 @@ def dashboard():
 @login_required
 def settings():
     fields = ["brand_name","brand_subtitle","home_kicker","home_title","home_subtitle","about_text","years_experience","base_countries","client_count","footer_about","phone","email"]
+    upload_fields = {"site_logo": "branding", "site_favicon": "branding"}
     if request.method == "POST":
         for key in fields:
             row = SiteSetting.query.filter_by(key=key).first() or SiteSetting(key=key)
             row.value = request.form.get(key, "")
             db.session.add(row)
+        for key, folder in upload_fields.items():
+            uploaded_path = save_upload(request.files.get(key), folder)
+            if uploaded_path:
+                row = SiteSetting.query.filter_by(key=key).first() or SiteSetting(key=key)
+                row.value = uploaded_path
+                db.session.add(row)
         db.session.commit()
         flash("Configurações salvas.", "success")
         return redirect(url_for("admin.settings"))
     settings = {s.key:s.value for s in SiteSetting.query.all()}
-    return render_template("admin/settings.html", fields=fields, settings=settings)
+    return render_template("admin/settings.html", fields=fields, settings=settings, upload_fields=upload_fields)
 
 @admin_bp.route("/clients", methods=["GET", "POST"])
 @login_required

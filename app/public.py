@@ -1,12 +1,7 @@
 from flask import Blueprint, render_template, send_from_directory, current_app
 from .models import Project, Client
-from .utils import settings_dict, social_links
 
 public_bp = Blueprint("public", __name__)
-
-@public_bp.app_context_processor
-def inject_globals():
-    return {"S": settings_dict(), "social_links": social_links()}
 
 @public_bp.route("/media/<path:filename>")
 def media(filename):

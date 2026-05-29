@@ -36,6 +36,11 @@ def create_app():
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
 
+    @app.context_processor
+    def inject_site_globals():
+        from .utils import settings_dict, social_links
+        return {"S": settings_dict(), "social_links": social_links()}
+
     @app.cli.command("init-db")
     def init_db_command():
         db.create_all()
