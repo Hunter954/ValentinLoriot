@@ -39,7 +39,7 @@ URLs `/media/...` são persistentes e servem os arquivos locais com suporte a Ra
 
 CI usa PostgreSQL 16 descartável, banco `portfolio_test`, para testar concorrência real. Credencial CI no workflow é apenas do banco efêmero, sem vínculo com produção. Builds Docker também passam no CI.
 
-Fonte de verdade: GitHub. Conectar Dokploy à branch main e configurar acionamento após sucesso do CI. Se o provedor instalado não suportar esse gatilho, usar webhook privado disparado por workflow após testes; o segredo deve ser cadastrado nas configurações GitHub, nunca no YAML. Não habilitar push direto sem gate de testes.
+Fonte de verdade: GitHub, branch main. O agendamento deployment-watch consulta o CI antes de enviar ao webhook privado um payload com refs/heads/main e o SHA aprovado. O switch Autodeploy do Dokploy precisa estar ligado para o webhook aceitar a chamada; nenhum webhook de push direto deve ser cadastrado no GitHub. O segredo permanece somente no ambiente privado da aplicação. O CI constrói a imagem de produção e roda os testes nela contra PostgreSQL 16 efêmero.
 
 Rollback: voltar à imagem/commit previamente validado no histórico de deploys. A primeira implantação ainda não tem versão anterior de produção; manter o banco persistente, nunca reconstruí-lo para reverter código.
 
@@ -64,3 +64,15 @@ Testes locais: páginas públicas, CSRF, CRUD de usuários, conta inativa, MIME/
 - Desativar o agendamento de deploy antes de um rollback manual para impedir que o observador recoloque a versão mais recente automaticamente.
 - Primeiro acesso: configurar `ADMIN_SETUP_EMAIL=loriotvalentin9@gmail.com` e `ADMIN_SETUP_TOKEN` aleatório com pelo menos 32 caracteres. Abrir `/admin/setup`; o operador fornece a chave pelo formulário e o cliente define a senha. A página fica indisponível depois que existe o primeiro usuário. A chave nunca deve entrar no Git ou em links públicos; remover a variável depois da criação.
 - `backup-verify /backups/<snapshot>` permite testar novamente o banco e o inventário da mídia. Uma recuperação real deve ser feita pelo administrador em ambiente novo, usando `pg_restore` e o arquivo `media.tar`, após validar o manifesto e os caminhos; não sobrescrever produção como teste.
+
+## Validação na VPS — 27/10/2026
+
+- URL HTTPS: https://valentin.70.38.101.106.nip.io/.
+- PostgreSQL exclusivo, sem porta pública, e mídia local persistente. Aplicação: 0,5 CPU / 512 MiB; PostgreSQL: 0,5 CPU / 384 MiB.
+- CI: 22 testes aprovados, incluindo backup/restauração PostgreSQL e concorrência de uploads.
+- Backup real `valentin-20261027T102457Z-6399ae9c`: status ok e restore_verified=true, em volume separado. Não há cópia fora da VPS configurada.
+- Backup diário ativo às 03:10 de Brasília; reconciliação às 03:40; observador de deploy a cada cinco minutos.
+- Webhook testado: deploy-triggered para commit aprovado; a execução seguinte retornou up-to-date após recriação do contêiner, comprovando persistência do estado.
+- Primeiro acesso do administrador do site preparado em /admin/setup. A conta só estará criada após o usuário definir e enviar sua senha.
+- Conta cliente no Dokploy ainda não provisionada: permissões detalhadas exigem Enterprise nesta instalação. Não conceder acesso amplo como substituto. O painel do próprio site gerencia conteúdo e mídias; acesso ao código exige revisão e gestão pelo GitHub.
+- Rotação de logs ainda não confirmada no serviço. Cota de mídia é aplicada pelo backend, não pelo sistema de arquivos.
