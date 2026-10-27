@@ -54,3 +54,13 @@ E-mail informado: loriotvalentin9@gmail.com. Papel Member, somente este projeto 
 ## Estado de validação
 
 Testes locais: páginas públicas, CSRF, CRUD de usuários, conta inativa, MIME/conteúdo, cota exata, excedente, concorrência com trava de arquivo de desenvolvimento, disco cheio, limpeza em falha, referências compartilhadas, Range de vídeo e persistência após reiniciar a aplicação. O job de CI valida também a trava PostgreSQL. HTTPS, consumo, volume montado após redeploy, backup/restore e conta Member só podem ser marcados concluídos após testes no ambiente publicado.
+
+## Operação automatizada
+
+- Volume adicional `valentin-loriot-backups` em `/backups`, separado de `/data`.
+- `flask --app app backup-create --verify`: snapshot do PostgreSQL e tar de mídias sob a mesma trava dos uploads; manifesto com SHA-256 e contagens; restauração em banco descartável com exclusão somente desse banco de teste. Retenção de 14 snapshots completos. A cópia local não protege contra perda do servidor; exportar cópia para outro destino continua necessário.
+- Agendar backup diariamente às 06:10 UTC (03:10 em Brasília), dentro do próprio contêiner, com usuário 10001. Configurar `BACKUP_DIR=/backups`.
+- `flask --app app deployment-watch`: consultar o commit de `main` e o resultado do workflow `Validate portfolio`; acionar somente o webhook privado deste serviço depois de sucesso. Agendar a cada 5 minutos. Definir `DEPLOY_WEBHOOK_URL` no ambiente privado e `DEPLOY_BASELINE` como o commit inicialmente publicado. O estado é persistido em `/data/deployment-state.json`, fora da cota de mídias.
+- Desativar o agendamento de deploy antes de um rollback manual para impedir que o observador recoloque a versão mais recente automaticamente.
+- Primeiro acesso: configurar `ADMIN_SETUP_EMAIL=loriotvalentin9@gmail.com` e `ADMIN_SETUP_TOKEN` aleatório com pelo menos 32 caracteres. Abrir `/admin/setup`; o operador fornece a chave pelo formulário e o cliente define a senha. A página fica indisponível depois que existe o primeiro usuário. A chave nunca deve entrar no Git ou em links públicos; remover a variável depois da criação.
+- `backup-verify /backups/<snapshot>` permite testar novamente o banco e o inventário da mídia. Uma recuperação real deve ser feita pelo administrador em ambiente novo, usando `pg_restore` e o arquivo `media.tar`, após validar o manifesto e os caminhos; não sobrescrever produção como teste.

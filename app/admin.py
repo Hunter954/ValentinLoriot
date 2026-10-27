@@ -4,8 +4,35 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from . import db
 from .models import User, Client, Project, Media, SiteSetting, SocialLink
 from .utils import save_upload, slugify
+import os
+import secrets
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+@admin_bp.route("/setup", methods=["GET", "POST"])
+def first_admin_setup():
+    token = os.getenv("ADMIN_SETUP_TOKEN", "")
+    email = os.getenv("ADMIN_SETUP_EMAIL", "")
+    if len(token) < 32 or not email or User.query.first():
+        abort(404)
+    if request.method == "POST":
+        from .security import check_login_rate
+        from .storage import write_lock
+        check_login_rate()
+        if not secrets.compare_digest(token, request.form.get("setup_token", "")):
+            abort(403, "Chave de configuração inválida.")
+        password = request.form.get("password", "")
+        if len(password) < 12 or password != request.form.get("confirm_password", ""):
+            abort(400, "Use uma senha de pelo menos 12 caracteres e confirme a mesma senha.")
+        with write_lock():
+            if User.query.first():
+                abort(409, "Administrador já configurado.")
+            db.session.add(User(name="Valentin Loriot", email=email.strip().lower(),
+                                password_hash=generate_password_hash(password)))
+            db.session.commit()
+        flash("Conta criada. Entre com seu e-mail e a senha escolhida.", "success")
+        return redirect(url_for("admin.login"))
+    return render_template("admin/setup.html", email=email)
 
 @admin_bp.route("/login", methods=["GET", "POST"])
 def login():
