@@ -5,9 +5,13 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
@@ -31,7 +35,14 @@ jobs:
           cache: pip
           cache-dependency-path: requirements.lock
       - run: pip install -r requirements.lock pytest==9.1.1
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg postgresql-client-16
+      - name: Ensure media and PostgreSQL tools
+        run: |
+          if ! command -v ffprobe >/dev/null || [ ! -x /usr/lib/postgresql/16/bin/pg_dump ]; then
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
+            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y ffmpeg postgresql-client-16
+          fi
+          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
+          /usr/lib/postgresql/16/bin/pg_dump --version
       - run: python -m compileall -q app
       - run: python -m pytest -q
       - run: docker build -t valentin-portfolio:test .
