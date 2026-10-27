@@ -325,7 +325,14 @@ def test_deploy_gate_requires_successful_ci(tmp_path, monkeypatch):
         def __exit__(self,*args): pass
     monkeypatch.setattr(deployment,'github',lambda path: {'sha':'new'} if path=='/commits/main' else {'workflow_runs':[
         {'head_sha':'new','head_branch':'main','event':'push','name':'Validate portfolio','status':'completed','conclusion':'success'}]})
-    monkeypatch.setattr(deployment,'urlopen',lambda *a,**k: Accepted())
+    def dokploy_accept(request, **kwargs):
+        import json
+        assert request.get_header('X-github-event') == 'push'
+        payload = json.loads(request.data)
+        assert payload['ref'] == 'refs/heads/main'
+        assert payload['head_commit']['id'] == 'new'
+        return Accepted()
+    monkeypatch.setattr(deployment,'urlopen',dokploy_accept)
     assert deployment.deployment_check()['status'] == 'deploy-triggered'
     assert deployment.deployment_check()['status'] == 'up-to-date'
 

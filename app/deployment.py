@@ -41,7 +41,9 @@ def deployment_check():
         temporary = Path(temp.name)
     temporary.replace(state)
     try:
-        req = Request(hook, data=b'{}', headers={'Content-Type':'application/json'}, method='POST')
+        payload = {'ref':'refs/heads/main', 'head_commit':{'id':head, 'message':'Deploy main apos validacao CI'}, 'commits':[]}
+        req = Request(hook, data=json.dumps(payload).encode(),
+                      headers={'Content-Type':'application/json','X-GitHub-Event':'push'}, method='POST')
         with urlopen(req, timeout=30) as response:
             if not 200 <= response.status < 300:
                 raise ValueError('Deploy not accepted')
