@@ -283,3 +283,61 @@ def test_survives_app_restart(local_media):
     second_app.config['TESTING'] = True
     assert second_app.test_client().get('/media/' + key).status_code == 200
     assert second_app.test_client().get('/portfolio/test').status_code == 200
+
+
+def test_linebreaks_are_not_literal_html(env):
+    response = env.test_client().get('/')
+    assert b'&lt;br&gt;' not in response.data
+    assert b'white-space:pre-line' in response.data
+
+
+def test_initial_setup_is_one_time(env, monkeypatch):
+    token = 'test-setup-token-32-characters-long'
+    monkeypatch.setenv('ADMIN_SETUP_TOKEN', token)
+    monkeypatch.setenv('ADMIN_SETUP_EMAIL','loriotvalentin9@gmail.com')
+    with env.app_context():
+        db.session.query(User).delete()
+        db.session.commit()
+    c = env.test_client()
+    assert c.get('/admin/setup').status_code == 200
+    with c.session_transaction() as session:
+        csrf = session['csrf']
+    assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':'bad'}).status_code == 403
+    assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':token,'password':'test-long-password',
+        'confirm_password':'test-long-password'}).status_code == 302
+    assert c.get('/admin/setup').status_code == 404
+    assert c.post('/admin/login',data={'csrf_token':csrf,'email':'loriotvalentin9@gmail.com',
+        'password':'test-long-password'}).status_code == 302
+    assert c.get('/admin/').status_code == 200
+
+
+def test_deploy_gate_requires_successful_ci(tmp_path, monkeypatch):
+    from app import deployment
+    monkeypatch.setenv('DEPLOY_WEBHOOK_URL','https://nostracodes.com.br/api/deploy/test-only')
+    monkeypatch.setenv('DEPLOY_STATE_FILE',str(tmp_path/'watch.json'))
+    monkeypatch.setenv('DEPLOY_BASELINE','old')
+    monkeypatch.setattr(deployment,'github',lambda path: {'sha':'new'} if path=='/commits/main' else {'workflow_runs':[]})
+    assert deployment.deployment_check()['status'] == 'waiting-for-ci'
+    assert not (tmp_path/'watch.json').exists()
+    class Accepted:
+        status=200
+        def __enter__(self): return self
+        def __exit__(self,*args): pass
+    monkeypatch.setattr(deployment,'github',lambda path: {'sha':'new'} if path=='/commits/main' else {'workflow_runs':[
+        {'head_sha':'new','head_branch':'main','event':'push','name':'Validate portfolio','status':'completed','conclusion':'success'}]})
+    monkeypatch.setattr(deployment,'urlopen',lambda *a,**k: Accepted())
+    assert deployment.deployment_check()['status'] == 'deploy-triggered'
+    assert deployment.deployment_check()['status'] == 'up-to-date'
+
+
+@pytest.mark.skipif(not os.getenv('TEST_DATABASE_URL'),reason='PostgreSQL restore is tested in CI')
+def test_postgresql_backup_and_restore(local_media, monkeypatch, tmp_path):
+    from app.backups import create_snapshot, verify_snapshot
+    app, files = local_media
+    monkeypatch.setenv('BACKUP_DIR',str(tmp_path/'backups'))
+    create_project(signed_client(app))
+    with app.app_context():
+        snapshot = create_snapshot()
+        manifest = verify_snapshot(snapshot)
+        assert manifest['tables']['project'] == 1
+        assert len(manifest['files']) == 1

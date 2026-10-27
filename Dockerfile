@@ -1,8 +1,13 @@
+FROM postgres:16-bookworm AS pgtools
 FROM python:3.11-slim-bookworm
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=5000 UPLOAD_DIR=/data/uploads
-RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates libpq5 && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 portfolio && useradd --uid 10001 --gid portfolio --create-home portfolio
-RUN mkdir -p /data/uploads && chown -R portfolio:portfolio /data
+COPY --from=pgtools /usr/lib/postgresql/16/bin/pg_dump /usr/local/bin/pg_dump
+COPY --from=pgtools /usr/lib/postgresql/16/bin/pg_restore /usr/local/bin/pg_restore
+COPY --from=pgtools /usr/lib/x86_64-linux-gnu/libpq.so.5* /usr/local/lib/
+RUN ldconfig && pg_dump --version && pg_restore --version
+RUN mkdir -p /data/uploads /backups && chown -R portfolio:portfolio /data /backups
 WORKDIR /app
 COPY requirements.lock .
 RUN pip install --no-cache-dir -r requirements.lock

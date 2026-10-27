@@ -40,6 +40,10 @@ def create_app():
     init_security(app)
     from .storage import init_storage
     init_storage(app)
+    from .backups import init_backups
+    init_backups(app)
+    from .deployment import init_deployment
+    init_deployment(app)
 
     from .models import User, SiteSetting
 

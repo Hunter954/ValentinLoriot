@@ -5,9 +5,13 @@ on:
   pull_request:
 permissions:
   contents: read
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16-alpine
@@ -17,7 +21,7 @@ jobs:
           POSTGRES_DB: portfolio_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U portfolio -d portfolio_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -25,13 +29,13 @@ jobs:
       TEST_DATABASE_URL: postgresql://portfolio:ci-only-password@localhost:5432/portfolio_test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: requirements.lock
-      - run: pip install -r requirements.lock pytest==9.1.1
-      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
-      - run: python -m compileall -q app
-      - run: python -m pytest -q
-      - run: docker build -t valentin-portfolio:test .
+      - name: Build production image
+        run: docker build -t valentin-portfolio:test .
+      - name: Validate production image with PostgreSQL
+        run: |
+          docker run --rm --network host --user root \
+            -e TEST_DATABASE_URL \
+            -v "$PWD/tests:/app/tests:ro" \
+            valentin-portfolio:test sh -c \
+            'pip install --no-cache-dir pytest==9.1.1 && python -m compileall -q app && python -m pytest -q'
+
