@@ -21,7 +21,7 @@ jobs:
           POSTGRES_DB: portfolio_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U portfolio -d portfolio_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
@@ -29,20 +29,11 @@ jobs:
       TEST_DATABASE_URL: postgresql://portfolio:ci-only-password@localhost:5432/portfolio_test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: pip
-          cache-dependency-path: requirements.lock
-      - run: pip install -r requirements.lock pytest==9.1.1
-      - name: Ensure media and PostgreSQL tools
+      - name: Build production image
+        run: docker build -t valentin-portfolio:test .
+      - name: Validate production image with PostgreSQL
         run: |
-          if ! command -v ffprobe >/dev/null || [ ! -x /usr/lib/postgresql/16/bin/pg_dump ]; then
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 update -qq
-            sudo apt-get -o Acquire::Retries=1 -o Acquire::http::Timeout=20 -o Acquire::https::Timeout=20 install -y ffmpeg postgresql-client-16
-          fi
-          echo "/usr/lib/postgresql/16/bin" >> "$GITHUB_PATH"
-          /usr/lib/postgresql/16/bin/pg_dump --version
-      - run: python -m compileall -q app
-      - run: python -m pytest -q
-      - run: docker build -t valentin-portfolio:test .
+          docker run --rm --network host --user root \
+            -e TEST_DATABASE_URL \
+            valentin-portfolio:test sh -c \
+            'pip install --no-cache-dir pytest==9.1.1 && python -m compileall -q app && python -m pytest -q'
