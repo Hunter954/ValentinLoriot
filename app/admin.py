@@ -22,8 +22,8 @@ def first_admin_setup():
         if not secrets.compare_digest(token, request.form.get("setup_token", "")):
             abort(403, "Chave de configuração inválida.")
         password = request.form.get("password", "")
-        if len(password) < 12 or password != request.form.get("confirm_password", ""):
-            abort(400, "Use uma senha de pelo menos 12 caracteres e confirme a mesma senha.")
+        if not password or password != request.form.get("confirm_password", ""):
+            abort(400, "Informe uma senha e confirme a mesma senha.")
         with write_lock():
             if User.query.first():
                 abort(409, "Administrador já configurado.")
@@ -259,8 +259,8 @@ def delete_social(id):
 @login_required
 def users():
     if request.method == "POST":
-        if len(request.form.get("password", "")) < 12:
-            abort(400, "Use uma senha de pelo menos 12 caracteres.")
+        if not request.form.get("password", ""):
+            abort(400, "Informe uma senha.")
         if User.query.filter_by(email=request.form["email"].strip().lower()).first():
             abort(409, "Este e-mail já está cadastrado.")
         db.session.add(User(
@@ -281,8 +281,6 @@ def edit_user(id):
     u.email = request.form.get("email") or u.email
     password = request.form.get("password")
     if password:
-        if len(password) < 12:
-            abort(400, "Use uma senha de pelo menos 12 caracteres.")
         u.password_hash = generate_password_hash(password)
     if u.id != current_user.id:
         u.is_active = bool(request.form.get("is_active"))

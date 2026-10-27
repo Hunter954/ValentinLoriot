@@ -72,9 +72,9 @@ def create_app():
         email = click.prompt("E-mail").strip().lower()
         if User.query.filter_by(email=email).first():
             raise click.ClickException("Usuário já existe")
-        password = click.prompt("Senha (mínimo 12 caracteres)", hide_input=True, confirmation_prompt=True)
-        if len(password) < 12:
-            raise click.ClickException("Senha muito curta")
+        password = click.prompt("Senha", hide_input=True, confirmation_prompt=True)
+        if not password:
+            raise click.ClickException("Informe uma senha")
         db.session.add(User(name="Admin", email=email, password_hash=generate_password_hash(password)))
         db.session.commit()
         click.echo("Administrador criado")

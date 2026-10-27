@@ -200,7 +200,7 @@ def test_login_rate_limit(env):
 
 def test_user_crud_and_inactive_session(env):
     c = signed_client(env)
-    assert c.post('/admin/users', data={'csrf_token':'test-token','email':'second@example.com','password':'long-test-password','is_active':'on'}).status_code == 302
+    assert c.post('/admin/users', data={'csrf_token':'test-token','email':'second@example.com','password':'a','is_active':'on'}).status_code == 302
     assert c.post('/admin/users/1/delete',data={'csrf_token':'test-token'}).status_code == 302
     with env.app_context():
         assert User.query.count() == 2
@@ -299,15 +299,19 @@ def test_initial_setup_is_one_time(env, monkeypatch):
         db.session.query(User).delete()
         db.session.commit()
     c = env.test_client()
-    assert c.get('/admin/setup').status_code == 200
+    setup_page = c.get('/admin/setup')
+    assert setup_page.status_code == 200
+    assert b'minlength=' not in setup_page.data
     with c.session_transaction() as session:
         csrf = session['csrf']
     assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':'bad'}).status_code == 403
-    assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':token,'password':'test-long-password',
-        'confirm_password':'test-long-password'}).status_code == 302
+    assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':token,'password':'',
+        'confirm_password':''}).status_code == 400
+    assert c.post('/admin/setup',data={'csrf_token':csrf,'setup_token':token,'password':'x',
+        'confirm_password':'x'}).status_code == 302
     assert c.get('/admin/setup').status_code == 404
     assert c.post('/admin/login',data={'csrf_token':csrf,'email':'loriotvalentin9@gmail.com',
-        'password':'test-long-password'}).status_code == 302
+        'password':'x'}).status_code == 302
     assert c.get('/admin/').status_code == 200
 
 
