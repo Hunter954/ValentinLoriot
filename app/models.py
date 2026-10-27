@@ -2,6 +2,11 @@ from datetime import datetime
 from flask_login import UserMixin
 from . import db
 
+class LoginThrottle(db.Model):
+    key = db.Column(db.String(64), primary_key=True)
+    bucket = db.Column(db.BigInteger, nullable=False)
+    attempts = db.Column(db.Integer, nullable=False, default=0)
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False, default="Admin")

@@ -10,10 +10,10 @@
         <source src="{{ url_for('public.media', filename=about_media) }}">
       </video>
     {% elif about_media %}
-      <img src="{{ url_for('public.media', filename=about_media) }}" alt="">
+      <img loading="lazy" src="{{ url_for('public.media', filename=about_media) }}" alt="">
       <span class="play"></span>
     {% else %}
-      <img src="{{ url_for('static', filename='img/demo_chateau_wide.jpg') }}" alt="">
+      <img loading="lazy" src="{{ url_for('static', filename='img/demo_chateau_wide.jpg') }}" alt="">
       <span class="play"></span>
     {% endif %}
     <div class="about-badge"><strong>{{ S.get('brand_name') }}</strong><small>{{ S.get('brand_subtitle') }}</small></div>

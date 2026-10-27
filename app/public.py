@@ -1,11 +1,18 @@
-from flask import Blueprint, render_template, send_from_directory, current_app
+from flask import Blueprint, render_template, send_from_directory, current_app, abort
 from .models import Project, Client
 
 public_bp = Blueprint("public", __name__)
 
 @public_bp.route("/media/<path:filename>")
 def media(filename):
-    return send_from_directory(current_app.config["UPLOAD_DIR"], filename)
+    from .storage import local_path
+    path = local_path(filename)
+    if path.name.startswith(".") or not path.is_file():
+        abort(404)
+    response = send_from_directory(current_app.config["UPLOAD_DIR"], filename, conditional=True, max_age=31536000)
+    response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
 
 @public_bp.route("/")
 def home():
