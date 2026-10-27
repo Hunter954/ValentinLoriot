@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
 from . import db
@@ -10,14 +10,17 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 @admin_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        user = User.query.filter_by(email=request.form.get("email", "").strip()).first()
+        from .security import check_login_rate
+        check_login_rate()
+        user = User.query.filter_by(email=request.form.get("email", "").strip().lower()).first()
         if user and getattr(user, "is_active", True) and check_password_hash(user.password_hash, request.form.get("password", "")):
+            session.clear()
             login_user(user)
             return redirect(url_for("admin.dashboard"))
         flash("E-mail ou senha inválidos.", "error")
     return render_template("admin/login.html")
 
-@admin_bp.route("/logout")
+@admin_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
@@ -26,7 +29,26 @@ def logout():
 @admin_bp.route("/")
 @login_required
 def dashboard():
-    return render_template("admin/dashboard.html", projects=Project.query.count(), clients=Client.query.count(), media=Media.query.count())
+    from .storage import usage
+    storage = usage()
+    return render_template("admin/dashboard.html", projects=Project.query.count(), clients=Client.query.count(), media=Media.query.count(), storage=storage)
+
+@admin_bp.route("/storage")
+@login_required
+def storage_files():
+    from .storage import inventory, usage
+    return render_template("admin/storage.html", files=inventory(), storage=usage())
+
+@admin_bp.route("/storage/delete", methods=["POST"])
+@login_required
+def storage_delete():
+    from .storage import delete_unreferenced, references
+    key = request.form.get("key", "")
+    if key in references():
+        abort(409, "Esta mídia ainda está em uso. Remova sua referência no projeto, cliente ou configurações.")
+    delete_unreferenced([key])
+    flash("Arquivo sem referências removido.", "success")
+    return redirect(url_for("admin.storage_files"))
 
 @admin_bp.route("/settings", methods=["GET", "POST"])
 @login_required
@@ -210,9 +232,13 @@ def delete_social(id):
 @login_required
 def users():
     if request.method == "POST":
+        if len(request.form.get("password", "")) < 12:
+            abort(400, "Use uma senha de pelo menos 12 caracteres.")
+        if User.query.filter_by(email=request.form["email"].strip().lower()).first():
+            abort(409, "Este e-mail já está cadastrado.")
         db.session.add(User(
             name=request.form.get("name") or "Admin",
-            email=request.form["email"],
+            email=request.form["email"].strip().lower(),
             password_hash=generate_password_hash(request.form["password"]),
             is_active=bool(request.form.get("is_active", "on")),
         ))
@@ -228,6 +254,8 @@ def edit_user(id):
     u.email = request.form.get("email") or u.email
     password = request.form.get("password")
     if password:
+        if len(password) < 12:
+            abort(400, "Use uma senha de pelo menos 12 caracteres.")
         u.password_hash = generate_password_hash(password)
     if u.id != current_user.id:
         u.is_active = bool(request.form.get("is_active"))

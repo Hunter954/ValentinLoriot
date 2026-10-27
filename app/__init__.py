@@ -11,30 +11,69 @@ login_manager.login_view = "admin.login"
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
+    app.config["PRODUCTION"] = os.getenv("APP_ENV") == "production"
     app.config["SECRET_KEY"] = os.getenv("FLASK_SECRET_KEY", "dev-change-me")
+    if app.config["PRODUCTION"] and len(app.config["SECRET_KEY"]) < 32:
+        raise RuntimeError("Production requires a unique FLASK_SECRET_KEY of at least 32 characters")
+    app.config.update(SESSION_COOKIE_SECURE=app.config["PRODUCTION"], SESSION_COOKIE_HTTPONLY=True,
+                      SESSION_COOKIE_SAMESITE="Lax", REMEMBER_COOKIE_SECURE=app.config["PRODUCTION"],
+                      REMEMBER_COOKIE_HTTPONLY=True, REMEMBER_COOKIE_SAMESITE="Lax")
     database_url = os.getenv("DATABASE_URL", "sqlite:///portfolio.db")
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    if database_url.startswith("postgresql:"):
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": 4, "max_overflow": 2, "pool_pre_ping": True}
+    if app.config["PRODUCTION"] and not database_url.startswith("postgresql:"):
+        raise RuntimeError("Production requires PostgreSQL")
     app.config["UPLOAD_DIR"] = os.getenv("UPLOAD_DIR", os.path.join(os.getcwd(), "uploads"))
-    app.config["MAX_CONTENT_LENGTH"] = 900 * 1024 * 1024
+    app.config["MAX_CONTENT_LENGTH"] = 90_000_000
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
     os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)
+    from .security import init_security
+    init_security(app)
+    from .storage import init_storage
+    init_storage(app)
 
     from .models import User, SiteSetting
 
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.get(User, int(user_id))
+        try:
+            user = db.session.get(User, int(user_id))
+            return user if user and user.is_active else None
+        except (TypeError, ValueError):
+            return None
 
     from .public import public_bp
     from .admin import admin_bp
     app.register_blueprint(public_bp)
     app.register_blueprint(admin_bp)
+
+    @app.route("/healthz")
+    def healthz():
+        from sqlalchemy import text
+        db.session.execute(text("SELECT 1"))
+        return {"status": "ok"}
+
+    @app.cli.command("create-admin")
+    def create_admin():
+        import click
+        email = click.prompt("E-mail").strip().lower()
+        if User.query.filter_by(email=email).first():
+            raise click.ClickException("Usuário já existe")
+        password = click.prompt("Senha (mínimo 12 caracteres)", hide_input=True, confirmation_prompt=True)
+        if len(password) < 12:
+            raise click.ClickException("Senha muito curta")
+        db.session.add(User(name="Admin", email=email, password_hash=generate_password_hash(password)))
+        db.session.commit()
+        click.echo("Administrador criado")
 
     @app.context_processor
     def inject_site_globals():
@@ -53,10 +92,12 @@ def create_app():
         seed_demo()
         print("Conteúdo demo criado.")
 
-    with app.app_context():
-        db.create_all()
-        ensure_schema_upgrades()
-        ensure_defaults(app)
+    # Production schema initialization is explicit, never in each Gunicorn worker.
+    if not app.config["PRODUCTION"]:
+        with app.app_context():
+            db.create_all()
+            ensure_schema_upgrades()
+            ensure_defaults(app)
 
     return app
 

@@ -1,0 +1,8 @@
+{% extends 'admin/base_admin.html' %}{% block content %}
+<header class="admin-head"><h1>Meu armazenamento</h1></header>
+<section class="panel">{% include 'admin/_storage_meter.html' %}</section>
+<section class="panel table"><h2>Arquivos armazenados</h2><p>Arquivos em uso ficam protegidos contra exclusão. Remova a mídia no projeto, cliente ou configurações para liberar espaço.</p>
+<table><thead><tr><th>Arquivo</th><th>Tamanho</th><th>Ação</th></tr></thead><tbody>
+{% for file in files %}<tr><td><a href="{{ url_for('public.media', filename=file.Key) }}" target="_blank" rel="noopener">{{ file.Key }}</a></td><td>{{ '%.2f'|format(file.Size / 1000000) }} MB</td>
+<td><form method="post" action="{{ url_for('admin.storage_delete') }}" onsubmit="return confirm('Excluir este arquivo sem referências?')"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="key" value="{{ file.Key }}"><button class="danger">Excluir se não estiver em uso</button></form></td></tr>
+{% else %}<tr><td colspan="3">Nenhum arquivo armazenado.</td></tr>{% endfor %}</tbody></table></section>{% endblock %}

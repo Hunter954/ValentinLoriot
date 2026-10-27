@@ -106,7 +106,10 @@
         }, 450);
       } else {
         disableForm(form, false);
-        setModalState('Erro no upload', 'O servidor retornou erro ' + xhr.status + '. Tente novamente.', 'is-error');
+        let message = 'O servidor retornou erro ' + xhr.status + '. Tente novamente.';
+        try { message = JSON.parse(xhr.responseText).error || message; } catch (_) {}
+        setModalState('Erro no upload', message, 'is-error');
+        ensureProgressModal().onclick = function () { this.classList.remove('show'); };
       }
     });
 

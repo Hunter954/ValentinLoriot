@@ -1,0 +1,7 @@
+<p>Você utilizou {{ '%.2f'|format(storage.used / 1000000000)|replace('.', ',') }} GB dos 3 GB disponíveis.</p>
+<progress max="100" value="{{ storage.percent }}" style="width:100%;accent-color:#ffe100" aria-label="Uso do armazenamento"></progress>
+<p>{{ '%.2f'|format(storage.available / 1000000000)|replace('.', ',') }} GB disponíveis · {{ storage.objects }} arquivos.</p>
+{% if storage.percent >= 100 %}<p role="alert">Limite atingido. Novos uploads estão bloqueados.</p>
+{% elif storage.percent >= 95 %}<p role="alert">Armazenamento crítico: mais de 95% utilizados.</p>
+{% elif storage.percent >= 80 %}<p role="alert">Atenção: mais de 80% do espaço utilizado.</p>{% endif %}
+<p>Imagens: até 16 MB e 16 megapixels. Vídeos: até 80 MB por arquivo. Total por envio: até 90 MB. Prefira MP4 H.264 ou WebM compactado; vídeos maiores podem usar um link externo.</p>
