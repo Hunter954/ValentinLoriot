@@ -35,5 +35,7 @@ jobs:
         run: |
           docker run --rm --network host --user root \
             -e TEST_DATABASE_URL \
+            -v "$PWD/tests:/app/tests:ro" \
             valentin-portfolio:test sh -c \
             'pip install --no-cache-dir pytest==9.1.1 && python -m compileall -q app && python -m pytest -q'
+
